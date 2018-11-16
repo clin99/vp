@@ -34,10 +34,10 @@ using token = verilog::VerilogParser::token;
 %option c++
 
 /* Define inclusive/exclusive states */
-%x in_comment
+%x in_comment 
 
 /* Predefined rules */
-NEWLINE         "\n|\r\n"
+NEWLINE         "\n"|"\r\n"
 SPACE           " |\t|\v|\f"
 COMMENT_BEGIN   "/*"
 COMMENT_END     "*/"

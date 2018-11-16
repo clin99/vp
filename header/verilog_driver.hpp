@@ -27,21 +27,22 @@ class ParserVerilogInterface {
     VerilogParser*  _parser {nullptr};
 };
 
-
 inline void ParserVerilogInterface::read(const std::experimental::filesystem::path& p){
   if(! std::experimental::filesystem::exists(p)){
     return ;
   }
 
   std::ifstream ifs(p);
+
   if(!_scanner){
     _scanner = new VerilogScanner(&ifs);
   }
   if(!_parser){
-    _parser = new VerilogParser(*_scanner, *this);
+    _parser = new VerilogParser(*_scanner, this);
   }
   _parser->parse();
 }
+
 
 struct ParserVerilog : public ParserVerilogInterface {
   void add_module(std::string&){}

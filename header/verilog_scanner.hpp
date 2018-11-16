@@ -12,7 +12,7 @@ namespace verilog {
 
 class VerilogScanner : public yyFlexLexer{
   public:
-   
+
     VerilogScanner(std::istream *in) : yyFlexLexer(in) {
     };
     virtual ~VerilogScanner() {
@@ -22,8 +22,8 @@ class VerilogScanner : public yyFlexLexer{
     using FlexLexer::yylex;
 
     virtual
-    int yylex( verilog::VerilogParser::semantic_type * const lval, 
-               verilog::VerilogParser::location_type *location );
+      int yylex( verilog::VerilogParser::semantic_type * const lval, 
+          verilog::VerilogParser::location_type *location );
     // YY_DECL defined in mc_lexer.l
     // Method body created by flex in mc_lexer.yy.cc
 

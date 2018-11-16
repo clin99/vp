@@ -23,7 +23,7 @@
 }
 
 %parse-param { VerilogScanner &scanner }
-%parse-param { ParserVerilogInterface &driver }
+%parse-param { ParserVerilogInterface *driver }
 
 %code{
   #include <iostream>

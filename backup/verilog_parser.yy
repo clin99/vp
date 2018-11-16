@@ -6,10 +6,10 @@
 %define parser_class_name {VerilogParser}
 
 %code requires{
-   namespace verilog {
-      class ParserVerilogInterface;
-      class VerilogScanner;
-   }
+  namespace verilog {
+    class ParserVerilogInterface;
+    class VerilogScanner;
+  }
 
 // The following definitions is missing when %locations isn't used
 # ifndef YY_NULLPTR
@@ -22,8 +22,8 @@
 
 }
 
-%parse-param { VerilogScanner  &scanner }
-%parse-param { ParserVerilogInterface  &driver }
+%parse-param { VerilogScanner &scanner }
+%parse-param { ParserVerilogInterface *driver }
 
 %code{
   #include <iostream>
@@ -69,8 +69,6 @@ item
 %%
 
 
-void 
-verilog::VerilogParser::error(const location_type &l, const std::string &err_message)
-{
-   std::cerr << "Error: " << err_message << " at " << l << "\n";
+void verilog::VerilogParser::error(const location_type &l, const std::string &err_message) {
+  std::cerr << "Error: " << err_message << " at " << l << "\n";
 }
