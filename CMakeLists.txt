@@ -26,6 +26,7 @@ add_executable(verilog_parser
   ${FLEX_verilog_lexer_OUTPUTS}
   ${BISON_verilog_parser_OUTPUTS}
 )
+target_link_libraries(verilog_parser stdc++fs)
 
 target_include_directories(verilog_parser
  PRIVATE
