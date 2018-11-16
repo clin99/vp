@@ -41,11 +41,11 @@
 %define parse.assert
 
 %token               END    0     "end of file"
-%token               UPPER
-%token               LOWER
-%token <std::string> WORD
-%token               NEWLINE
-%token               CHAR
+%token<std::string> UPPER
+%token<std::string> LOWER
+%token<std::string> WORD
+%token              NEWLINE
+%token<std::string> CHAR
 
 %locations
 
@@ -59,11 +59,11 @@ list
   ;
 
 item
-  : UPPER   { }
-  | LOWER   { }
-  | WORD    { }
-  | NEWLINE { }
-  | CHAR    { }
+  : UPPER   { std::cout << "upper " << $1 << '\n'; }
+  | LOWER   { std::cout << "lower " << $1 << '\n'; }
+  | WORD    { std::cout << "word  " << $1 << '\n'; }
+  | NEWLINE { std::cout << "newline \n"; }
+  | CHAR    { std::cout << "char " << $1 << '\n'; }
   ;
 
 %%

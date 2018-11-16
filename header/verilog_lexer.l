@@ -22,12 +22,16 @@ using token = verilog::VerilogParser::token;
 
 /* Make the generated scanner run in debug mode. */
 %option debug
+
 /* Cause the default rule (that unmatched scanner input is echoed to stdout) to be suppressed. */
 %option nodefault
+
 /* Inform flex that a derived NAME is implemented as a subclass of yyFlexLexer, so flex will place your actions in the member function foo::yylex() instead of yyFlexLexer::yylex(). */
 %option yyclass="verilog::VerilogScanner"
+
 /* Set yywrap always returns 1. yywrap is called when reaching EOF */
 %option noyywrap
+
 /* Suppress the warning message yyunput is defined but not used */
 %option nounput
 %option never-interactive
@@ -66,10 +70,12 @@ COMMENT_END     "*/"
 <in_comment>{COMMENT_END} { BEGIN(INITIAL); }
 
 [a-z]       {
+               yylval->build< std::string >( yytext );
                return( token::LOWER );
             }
 
 [A-Z]       {
+               yylval->build< std::string >( yytext );
                return( token::UPPER );
             }
 
