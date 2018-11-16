@@ -25,8 +25,8 @@ class ParserVerilogInterface {
   private:
     VerilogScanner* _scanner {nullptr};
     VerilogParser*  _parser {nullptr};
-
 };
+
 
 inline void ParserVerilogInterface::read(const std::experimental::filesystem::path& p){
   if(! std::experimental::filesystem::exists(p)){
