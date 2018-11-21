@@ -105,13 +105,13 @@ module
     {
       driver->add_module($2);
     }
-  | MODULE valid_name '(' port_decls ')' ';' clauses ENDMODULE 
-    {
-      //std::cout << "\n\n-----------\n";
-      //std::cout << $4 << '\n';
-      //std::cout << "-----------\n";
-      driver->add_port(std::move($4));
-      driver->add_module($2);
+  | MODULE valid_name '(' 
+      { driver->add_module($2); } 
+    port_decls ')' 
+      { driver->add_port(std::move($5)); }
+    ';' clauses ENDMODULE 
+    { 
+      
     }
   ;
 
@@ -138,10 +138,7 @@ port_decls
     }
   | port_decls ',' port_decl  
     {
-      //std::cout << "\n\n-----------\n";
-      //std::cout << $1 << '\n';
       driver->add_port(std::move($1));
-      //std::cout << "-----------\n";
       $$ = $3;
     }
   | port_decls ',' valid_name 
