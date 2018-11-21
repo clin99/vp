@@ -51,10 +51,10 @@
 %token<std::string> NAME 
 %token<std::string> ESCAPED_NAME  
 %token<int> INTEGER 
-%token<std::string> BINARY OCTAL DECIMAL HEX REAL
+%token<std::string> BINARY OCTAL DECIMAL HEX REAL EXP
 
 /* Keyword tokens */
-%token MODULE ENDMODULE INPUT OUTPUT INOUT WIRE
+%token MODULE ENDMODULE INPUT OUTPUT INOUT WIRE REG
 
 
 %locations
@@ -70,7 +70,8 @@ list
 
 item
   : 
-  | REAL       { std::cout << "REAL = " << $1 << '\n'; }
+  | EXP       { std::cout << "EXP = " << $1 << '\n'; }
+  | REAL      { std::cout << "REAL = " << $1 << '\n'; }
   | HEX       { std::cout << "HEX = " << $1 << '\n'; }
   | DECIMAL   { std::cout << "DECIMAL = " << $1 << '\n'; }
   | OCTAL     { std::cout << "OCTAL = " << $1 << '\n'; }
@@ -78,6 +79,7 @@ item
   | INTEGER   { std::cout << "INT = " << $1 << '\n'; }
   | NAME      { std::cout << "NAMED = " << $1 << '\n'; }
   | ESCAPED_NAME  { std::cout << "ESCAPED_NAME =\"" << $1 << "\"\n"; }
+
   | UPPER     { std::cout << "upper " << $1 << '\n'; }
   | LOWER     { std::cout << "lower " << $1 << '\n'; }
   | WORD      { std::cout << "word  " << $1 << '\n'; }

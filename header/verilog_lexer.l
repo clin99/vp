@@ -47,7 +47,6 @@ COMMENT_BEGIN   "/*"
 COMMENT_END     "*/" 
 
 /* Name rule http://www.asic-world.com/verilog/syntax1.html */
-
 NAME           [_a-zA-Z][$_a-zA-Z0-9]*{0,1023}
 ESCAPED_NAME   ^\\[\^!"#$%&()*+\-.a-zA-Z0-9{|}~\[\]]+[\t\f ]
 INTEGER        [1-9][0-9]+
@@ -56,13 +55,13 @@ OCTAL          [+-]?[0-9]*"'"[Oo][0-7_xXzZ]+
 DECIMAL        [+-]?[0-9]*"'"[Dd][0-9_xXzZ]+
 HEX            [+-]?[0-9]*"'"[Hh][0-9a-fA-F_xXzZ]+ 
 REAL           [-+]?([0-9]*\.[0-9]+|[0-9]+)
-
+EXP            [-+]?[0-9]+"."?[0-9]*"E"[-+]?[0-9]+
 
 
 /* Token rule section begins */
 %%
-%{  /** Code executed at the beginning of yylex **/
-  yylval = lval;
+%{ /** Code executed at the beginning of yylex **/
+   yylval = lval;
 %}
 
 <*>{SPACE} { /* ignore any space */ }
@@ -101,7 +100,7 @@ REAL           [-+]?([0-9]*\.[0-9]+|[0-9]+)
 {BINARY} {
             yylval->build<std::string>(yytext);
             return token::BINARY;
-          }
+         }
 
 {OCTAL} {
           yylval->build<std::string>(yytext);
@@ -122,6 +121,20 @@ REAL           [-+]?([0-9]*\.[0-9]+|[0-9]+)
          yylval->build<std::string>(yytext);
          return token::REAL;
        }
+
+{EXP} {
+        yylval->build<std::string>(yytext);
+        return token::EXP;
+      }
+
+module    { return token::MODULE; }
+endmodule { return token::ENDMODULE; }
+input     { return token::INPUT; } 
+output    { return token::OUTPUT; }
+inout     { return token::INOUT; }
+wire      { return token::WIRE; }
+reg       { return token::REG; }
+
 
 [a-z]  {
          yylval->build< std::string >( yytext );
@@ -144,17 +157,6 @@ REAL           [-+]?([0-9]*\.[0-9]+|[0-9]+)
              yylval->build< std::string >( yytext );
              return( token::WORD );
            }
-
-
-
-
-module    { return token::MODULE; }
-endmodule { return token::ENDMODULE; }
-input     { return token::INPUT; } 
-output    { return token::OUTPUT; }
-inout     { return token::INOUT; }
-wire      { return token::WIRE; }
-
 
 
 . {  
