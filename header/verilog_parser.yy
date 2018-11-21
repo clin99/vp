@@ -5,7 +5,11 @@
 %define api.namespace {verilog}
 %define parser_class_name {VerilogParser}
 
+%define parse.error verbose
+
 %code requires{
+  #include "verilog_data.hpp"
+
   namespace verilog {
     class ParserVerilogInterface;
     class VerilogScanner;
@@ -18,18 +22,20 @@
 #  else
 #   define YY_NULLPTR 0
 #  endif
-# endif
+# endif 
 
 }
 
 %parse-param { VerilogScanner &scanner }
 %parse-param { ParserVerilogInterface *driver }
 
-%code{
+%code {
   #include <iostream>
   #include <cstdlib>
   #include <fstream>
-   
+  #include <utility>
+  #include <tuple>
+  
    /* include for all driver functions */
   #include "verilog_driver.hpp"
 
@@ -50,6 +56,7 @@
 /* Valid name (Identifiers) */
 %token<std::string> NAME 
 %token<std::string> ESCAPED_NAME  
+
 %token<int> INTEGER 
 %token<std::string> BINARY OCTAL DECIMAL HEX REAL EXP
 
@@ -57,10 +64,110 @@
 %token MODULE ENDMODULE INPUT OUTPUT INOUT WIRE REG
 
 
-%locations
+/* Nonterminal Symbols */
+%type<std::string> valid_name  
+%type<std::variant<verilog::Net, verilog::Inst>> clauses 
+
+%type<std::pair<verilog::PortDirection, verilog::ConnectionType>> port_type 
+%type<verilog::Port> port_decls port_decl
+
+%locations 
+%start design
 
 %%
 
+
+valid_name
+  : NAME { $$ = $1; }
+  | ESCAPED_NAME { $$ = $1; }
+  ;
+
+
+
+design 
+  : modules;
+
+modules
+  :
+  | modules module
+  ;
+
+module
+  : MODULE valid_name ';' clauses ENDMODULE  
+    { 
+      driver->add_module($2);
+    }
+  | MODULE valid_name '(' ')' ';' clauses ENDMODULE   
+    {
+      driver->add_module($2);
+    }
+  | MODULE valid_name '(' port_names ')' ';' clauses ENDMODULE  
+    {
+      driver->add_module($2);
+    }
+  | MODULE valid_name '(' port_decls ')' ';' clauses ENDMODULE 
+    {
+      //std::cout << "\n\n-----------\n";
+      //std::cout << $4 << '\n';
+      //std::cout << "-----------\n";
+      driver->add_port(std::move($4));
+      driver->add_module($2);
+    }
+  ;
+
+// discard port names after module name
+port_names 
+  : valid_name { }
+  | port_names ',' valid_name  { }
+  ; 
+
+port_type 
+  : INPUT      { $$ = std::make_pair(verilog::PortDirection::INPUT, verilog::ConnectionType::NONE); }
+  | INPUT WIRE { $$ = std::make_pair(verilog::PortDirection::INPUT, verilog::ConnectionType::WIRE); }
+  | OUTPUT     { $$ = std::make_pair(verilog::PortDirection::OUTPUT,verilog::ConnectionType::NONE); }
+  | OUTPUT REG { $$ = std::make_pair(verilog::PortDirection::OUTPUT,verilog::ConnectionType::REG); }
+  | INOUT      { $$ = std::make_pair(verilog::PortDirection::INOUT, verilog::ConnectionType::NONE); }
+  | INOUT WIRE { $$ = std::make_pair(verilog::PortDirection::INOUT, verilog::ConnectionType::WIRE); }
+  | INOUT REG  { $$ = std::make_pair(verilog::PortDirection::INOUT, verilog::ConnectionType::REG); }
+  ;
+
+port_decls
+  : port_decl 
+    {
+      $$ = $1;
+    }
+  | port_decls ',' port_decl  
+    {
+      //std::cout << "\n\n-----------\n";
+      //std::cout << $1 << '\n';
+      driver->add_port(std::move($1));
+      //std::cout << "-----------\n";
+      $$ = $3;
+    }
+  | port_decls ',' valid_name 
+    {
+      $1.names.emplace_back($3);     
+      $$ = $1;
+    }
+  ;
+
+port_decl 
+  : port_type valid_name 
+    {
+      $$.dir  = std::get<0>($1);
+      $$.type = std::get<1>($1);
+      $$.names.emplace_back($2); 
+    }
+  | port_type '[' INTEGER ':' INTEGER ']' valid_name 
+  ;
+
+clauses 
+  :; 
+
+
+
+
+/*
 list_option : END | list END;
 
 list
@@ -87,10 +194,13 @@ item
   | UNDEFINED { std::cout << "UNDEFINED " << '\n'; }
   ;
 
+*/ 
 %%
 
 void verilog::VerilogParser::error(const location_type &l, const std::string &err_message) {
-  std::cerr << "Error: " << err_message << " at " << l << "\n";
+  std::cerr << "Parser error: " << err_message  << '\n'
+            << "  begin at line " << l.begin.line <<  " col " << l.begin.column  << '\n' 
+            << "  end   at line " << l.end.line <<  " col " << l.end.column << "\n";
 }
 
 
