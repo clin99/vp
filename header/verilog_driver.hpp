@@ -64,7 +64,7 @@ struct ParserVerilog : public ParserVerilogInterface {
   }  
 
   void add_assignment(Assignment&& ast) {
-    //std::cout << "\nAdd assignment: \n" << ast << '\n';
+    std::cout << "\nAdd assignment: \n" << ast << '\n';
   }  
 
 };

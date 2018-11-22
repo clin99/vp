@@ -102,7 +102,7 @@ trior     { return token::TRIOR; }
 triand    { return token::TRIAND; }
 SUPPLY0   { return token::SUPPLY0; }
 SUPPLY1   { return token::SUPPLY1; }
-
+assign    { return token::ASSIGN; }
 
 
 {ESCAPED_NAME}  { 

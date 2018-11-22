@@ -140,22 +140,55 @@ namespace verilog {
     return os;  
   }
 
-
-  struct Assignment {
-    std::string lhs;
-    int lbeg {-1};
-    int lend {-1};
-
-    std::vector<std::string> rhs;
-    int rbeg {-1};
-    int rend {-1};
+  struct NetBit {
+    NetBit(std::string&& n, int b): name(n), bit(b) {}
+    std::string name;
+    int bit {-1};
   };
 
-  //inline std::ostream& operator<<(std::ostream& os, const Assignment& ast) {  
-  //  os << ast.lhs << '[' << ast.lbeg << ',' << ast.lend << ']' << '='
-  //     << ast.rhs << '[' << ast.rbeg << ',' << ast.rend << ']' ;
-  //  return os;  
-  //}
+  struct NetPart {
+    NetPart(std::string&& n, int b, int e): name(n), beg(b), end(e) {}
+    std::string name;
+    int beg {-1};
+    int end {-1};
+  };
+  
+  struct Assignment {
+    // Left hand side can be: a wire, a bit in a wire, a part of a wire  
+    std::vector<std::variant<std::string, NetBit, NetPart>> lhs;
+
+    // Right hand side can be: a wire, a bit in a wire, a part of a wire, a constant
+    std::vector<std::variant<std::string, NetBit, NetPart, Constant>> rhs;
+  };
+
+
+  inline std::ostream& operator<<(std::ostream& os, const Assignment& ast) {  
+    os << "LHS: ";
+    for(const auto& l: ast.lhs){
+      switch(l.index()){
+        case 0: os << std::get<0>(l) << ' '; break;
+        case 1: os << std::get<1>(l).name << '/' << std::get<1>(l).bit << ' '; 
+                break;
+        case 2: os << std::get<2>(l).name << '/' << std::get<2>(l).beg << '/' << std::get<2>(l).end << ' '; 
+                break;
+      }
+    }
+    os << '\n';
+    os << "RHS: ";
+    for(const auto& r: ast.rhs){
+      switch(r.index()){
+        case 0: os << std::get<0>(r) << ' '; break;
+        case 1: os << std::get<1>(r).name << '/' << std::get<1>(r).bit << ' '; 
+                break;
+        case 2: os << std::get<2>(r).name << '/' << std::get<2>(r).beg << '/' << std::get<2>(r).end << ' '; 
+                break;
+        case 3: os << std::get<3>(r) << ' '; break;
+      }
+    }
+
+    return os;  
+  }
+
 
   struct Inst {
   };

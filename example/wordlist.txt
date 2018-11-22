@@ -7,4 +7,6 @@ wire [10:0] w1;
 
 output TTtt;
 wand [10:0] www;
+
+assign {qq, zz[10], {gg[45], bb}} = {zz [10], 123};
 endmodule
