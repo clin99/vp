@@ -57,8 +57,7 @@
 %token<std::string> NAME 
 %token<std::string> ESCAPED_NAME  
 
-%token<int> INTEGER 
-%token<std::string> BINARY OCTAL DECIMAL HEX REAL EXP
+%token<verilog::Constant> INTEGER BINARY OCTAL DECIMAL HEX REAL EXP
 
 /* Keyword tokens */
 %token MODULE ENDMODULE INPUT OUTPUT INOUT REG WIRE WAND WOR TRI TRIOR TRIAND SUPPLY0 SUPPLY1
@@ -69,10 +68,10 @@
 %type<std::variant<verilog::Net, verilog::Inst>> clauses 
 
 %type<std::pair<verilog::PortDirection, verilog::ConnectionType>> port_type 
-%type<verilog::Port> port_decls port_decl
+%type<verilog::Port> port_decls port_decl 
 
 %type<verilog::NetType> net_type
-
+%type<verilog::Net> net_decls net_decl 
 
 %locations 
 %start design
@@ -124,6 +123,7 @@ port_names
   | port_names ',' valid_name  { }
   ; 
 
+
 port_type 
   : INPUT      { $$ = std::make_pair(verilog::PortDirection::INPUT, verilog::ConnectionType::NONE); }
   | INPUT WIRE { $$ = std::make_pair(verilog::PortDirection::INPUT, verilog::ConnectionType::WIRE); }
@@ -162,15 +162,16 @@ port_decl
     {
       $$.dir  = std::get<0>($1);
       $$.type = std::get<1>($1);
-      $$.beg = $3;
-      $$.end = $5;
+      $$.beg = std::stoi($3.value);
+      $$.end = std::stoi($5.value);
       $$.names.emplace_back($7); 
     }
   ;
 
 clauses 
   : // empty
-  | clauses clause
+  | clauses clause 
+
   ; 
 
 clause
@@ -181,6 +182,7 @@ clause
 
 declaration 
   : port_decls ';' { driver->add_port(std::move($1)); } 
+  | net_decls  ';' { driver->add_net(std::move($1)); }
   ;
 
 
@@ -194,6 +196,55 @@ net_type
   |  SUPPLY0 { $$ = verilog::NetType::SUPPLY0; }
   |  SUPPLY1 { $$ = verilog::NetType::SUPPLY1; }
   ;
+
+net_decls
+  : net_decl 
+    {
+      $$ = $1;
+    }
+  | net_decls ',' net_decl  
+    {
+      driver->add_net(std::move($1));
+      $$ = $3;
+    }
+  | net_decls ',' valid_name 
+    {
+      $1.names.emplace_back($3);     
+      $$ = $1;
+    }
+  ;
+
+net_decl 
+  : net_type valid_name 
+    {
+      $$.type = $1;
+      $$.names.emplace_back($2); 
+    }
+  | net_type '[' INTEGER ':' INTEGER ']' valid_name  
+    {
+      $$.type = $1;
+      $$.beg = std::stoi($3.value);
+      $$.end = std::stoi($5.value);
+      $$.names.emplace_back($7); 
+    }
+  ;
+
+
+/*
+  | clauses clause_assign
+clause_assign
+  : ASSIGN assignments ';'
+
+assignments
+  : assignment 
+  | assignments ',' assignment 
+  ;
+
+assignment
+  : 
+
+*/
+
 
 instance 
   :

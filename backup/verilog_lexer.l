@@ -1,6 +1,7 @@
 %{
 /* C++ string header, for string ops below */
 #include <string>
+#include <variant>
 
 /* Implementation of yyFlexScanner */ 
 #include "verilog_scanner.hpp"
@@ -45,11 +46,12 @@ NEWLINE         "\n"|"\r\n"
 SPACE           " "|"\t"|"\f"
 COMMENT_BEGIN   "/*"
 COMMENT_END     "*/" 
+COMMENT_LINE  "//".*\n
 
 /* Name rule http://www.asic-world.com/verilog/syntax1.html */
 NAME           [_a-zA-Z][$_a-zA-Z0-9]*{0,1023}
 ESCAPED_NAME   ^\\[\^!"#$%&()*+\-.a-zA-Z0-9{|}~\[\]]+[\t\f ]
-INTEGER        [1-9][0-9]+
+INTEGER        [1-9][0-9]+|0
 BINARY         [+-]?[0-9]*"'"[Bb][01_xXzZ]+
 OCTAL          [+-]?[0-9]*"'"[Oo][0-7_xXzZ]+ 
 DECIMAL        [+-]?[0-9]*"'"[Dd][0-9_xXzZ]+
@@ -67,7 +69,7 @@ EXP            [-+]?[0-9]+"."?[0-9]*"E"[-+]?[0-9]+
 <*>{SPACE} { /* ignore any space */ }
 {NEWLINE}  { // Update line numbers 
              loc->lines();
-             return( token::NEWLINE );
+             // return( token::NEWLINE ); 
            }
 
 {COMMENT_BEGIN} { BEGIN(in_comment); }
@@ -80,20 +82,41 @@ EXP            [-+]?[0-9]+"."?[0-9]*"E"[-+]?[0-9]+
 <in_comment>. { /* ignore characters in comment */ }
 <in_comment>{COMMENT_END} { BEGIN(INITIAL); }
 
+{COMMENT_LINE}  { loc->lines(); }
+
+":"|"."|"{"|"}"|"["|"]"|","|"*"|";"|"="|"-"|"+"|"|"|"("|")" {
+  return yytext[0];
+}
+
+module    { return token::MODULE; }
+endmodule { return token::ENDMODULE; }
+input     { return token::INPUT; } 
+output    { return token::OUTPUT; }
+inout     { return token::INOUT; }
+reg       { return token::REG; }
+wire      { return token::WIRE; } 
+wor       { return token::WOR; }
+wand      { return token::WAND; }
+tri       { return token::TRI; }
+trior     { return token::TRIOR; }
+triand    { return token::TRIAND; }
+SUPPLY0   { return token::SUPPLY0; }
+SUPPLY1   { return token::SUPPLY1; }
+
 
 
 {ESCAPED_NAME}  { 
-                   yylval->build<std::string>( yytext );
-                   return token::ESCAPED_NAME;
-                }
+  yylval->build<std::string>( yytext );
+  return token::ESCAPED_NAME;
+}
 
-{NAME}  { 
-           yylval->build<std::string>( yytext );
-           return token::NAME;
-        }
+{NAME} { 
+  yylval->build<std::string>( yytext );
+  return token::NAME;
+}
 
 {INTEGER} {
-            yylval->build<int>( std::atoi(yytext) );
+            yylval->build<std::string>(verilog::Constant(std::move(yytext), verilog::ConstantType::INTEGER));
             return token::INTEGER;
           }
 
@@ -127,36 +150,8 @@ EXP            [-+]?[0-9]+"."?[0-9]*"E"[-+]?[0-9]+
         return token::EXP;
       }
 
-module    { return token::MODULE; }
-endmodule { return token::ENDMODULE; }
-input     { return token::INPUT; } 
-output    { return token::OUTPUT; }
-inout     { return token::INOUT; }
-wire      { return token::WIRE; }
-reg       { return token::REG; }
 
 
-[a-z]  {
-         yylval->build< std::string >( yytext );
-         return( token::LOWER );
-       }
-
-[A-Z]  {
-         yylval->build< std::string >( yytext );
-         return( token::UPPER );
-       }
-
-[a-zA-Z]+  {
-             /**
-              * Section 10.1.5.1 of the 3.0.2 Bison Manual says the 
-              * following should work:
-              * yylval.build( yytext );
-              * but it doesn't.
-              * ref: http://goo.gl/KLn0w2
-              */
-             yylval->build< std::string >( yytext );
-             return( token::WORD );
-           }
 
 
 . {  

@@ -3,4 +3,8 @@ module Q2(input wire A1, A2, B2, output C1, AREWR, inout [0:10] GG);
 //module Q3(input wire A1, A2,  B1, z2);
   input [0:10] GG, aaaa;
 output TT;
+wire [10:0] w1;
+
+output TTtt;
+wand [10:0] www;
 endmodule
