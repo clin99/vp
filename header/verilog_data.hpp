@@ -39,13 +39,7 @@ namespace verilog {
       case ConnectionType::REG:   os << "REG";  break; 
     }
     return os;  
-  }
-
-  struct Net {
-  };
-
-  struct Inst {
-  };
+  } 
 
   struct Port {
     std::vector<std::string> names;
@@ -53,6 +47,18 @@ namespace verilog {
     int end {-1};
     PortDirection dir;
     ConnectionType type;
+  };
+
+
+  enum class NetType {
+    WIRE, 
+    WAND,
+    WOR,
+    TRI,
+    TRIOR,
+    TRIAND,
+    SUPPLY0,
+    SUPPLY1
   };
 
   inline std::ostream& operator<<(std::ostream& os, const Port& port) {  
@@ -63,6 +69,14 @@ namespace verilog {
     }
     return os;  
   }
+
+
+
+  struct Net {
+  };
+
+  struct Inst {
+  };
 
 
 } 

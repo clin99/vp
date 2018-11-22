@@ -61,7 +61,7 @@
 %token<std::string> BINARY OCTAL DECIMAL HEX REAL EXP
 
 /* Keyword tokens */
-%token MODULE ENDMODULE INPUT OUTPUT INOUT WIRE REG
+%token MODULE ENDMODULE INPUT OUTPUT INOUT REG WIRE WAND WOR TRI TRIOR TRIAND SUPPLY0 SUPPLY1
 
 
 /* Nonterminal Symbols */
@@ -70,6 +70,9 @@
 
 %type<std::pair<verilog::PortDirection, verilog::ConnectionType>> port_type 
 %type<verilog::Port> port_decls port_decl
+
+%type<verilog::NetType> net_type
+
 
 %locations 
 %start design
@@ -108,14 +111,14 @@ module
   | MODULE valid_name '(' 
       { driver->add_module($2); } 
     port_decls ')' 
-      { driver->add_port(std::move($5)); }
-    ';' clauses ENDMODULE 
+      { driver->add_port(std::move($5)); } ';' 
+    clauses ENDMODULE 
     { 
       
     }
   ;
 
-// discard port names after module name
+// port names are ignored as they will be parsed later in declaration
 port_names 
   : valid_name { }
   | port_names ',' valid_name  { }
@@ -125,10 +128,10 @@ port_type
   : INPUT      { $$ = std::make_pair(verilog::PortDirection::INPUT, verilog::ConnectionType::NONE); }
   | INPUT WIRE { $$ = std::make_pair(verilog::PortDirection::INPUT, verilog::ConnectionType::WIRE); }
   | OUTPUT     { $$ = std::make_pair(verilog::PortDirection::OUTPUT,verilog::ConnectionType::NONE); }
-  | OUTPUT REG { $$ = std::make_pair(verilog::PortDirection::OUTPUT,verilog::ConnectionType::REG); }
+  | OUTPUT REG { $$ = std::make_pair(verilog::PortDirection::OUTPUT,verilog::ConnectionType::REG);  }
   | INOUT      { $$ = std::make_pair(verilog::PortDirection::INOUT, verilog::ConnectionType::NONE); }
   | INOUT WIRE { $$ = std::make_pair(verilog::PortDirection::INOUT, verilog::ConnectionType::WIRE); }
-  | INOUT REG  { $$ = std::make_pair(verilog::PortDirection::INOUT, verilog::ConnectionType::REG); }
+  | INOUT REG  { $$ = std::make_pair(verilog::PortDirection::INOUT, verilog::ConnectionType::REG);  }
   ;
 
 port_decls
@@ -155,11 +158,46 @@ port_decl
       $$.type = std::get<1>($1);
       $$.names.emplace_back($2); 
     }
-  | port_type '[' INTEGER ':' INTEGER ']' valid_name 
+  | port_type '[' INTEGER ':' INTEGER ']' valid_name  
+    {
+      $$.dir  = std::get<0>($1);
+      $$.type = std::get<1>($1);
+      $$.beg = $3;
+      $$.end = $5;
+      $$.names.emplace_back($7); 
+    }
   ;
 
 clauses 
-  :; 
+  : // empty
+  | clauses clause
+  ; 
+
+clause
+  : declaration
+  | instance
+  ;
+
+
+declaration 
+  : port_decls ';' { driver->add_port(std::move($1)); } 
+  ;
+
+
+net_type 
+  :  WIRE    { $$ = verilog::NetType::WIRE;    }
+  |  WAND    { $$ = verilog::NetType::WAND;    }
+  |  WOR     { $$ = verilog::NetType::WOR;     }
+  |  TRI     { $$ = verilog::NetType::TRI;     }
+  |  TRIOR   { $$ = verilog::NetType::TRIOR;   }
+  |  TRIAND  { $$ = verilog::NetType::TRIAND;  }
+  |  SUPPLY0 { $$ = verilog::NetType::SUPPLY0; }
+  |  SUPPLY1 { $$ = verilog::NetType::SUPPLY1; }
+  ;
+
+instance 
+  :
+  ;
 
 
 

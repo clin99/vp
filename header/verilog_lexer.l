@@ -51,7 +51,7 @@ COMMENT_LINE  "//".*\n
 /* Name rule http://www.asic-world.com/verilog/syntax1.html */
 NAME           [_a-zA-Z][$_a-zA-Z0-9]*{0,1023}
 ESCAPED_NAME   ^\\[\^!"#$%&()*+\-.a-zA-Z0-9{|}~\[\]]+[\t\f ]
-INTEGER        [1-9][0-9]+
+INTEGER        [1-9][0-9]+|0
 BINARY         [+-]?[0-9]*"'"[Bb][01_xXzZ]+
 OCTAL          [+-]?[0-9]*"'"[Oo][0-7_xXzZ]+ 
 DECIMAL        [+-]?[0-9]*"'"[Dd][0-9_xXzZ]+
@@ -88,13 +88,20 @@ EXP            [-+]?[0-9]+"."?[0-9]*"E"[-+]?[0-9]+
   return yytext[0];
 }
 
-module  { return token::MODULE; }
+module    { return token::MODULE; }
 endmodule { return token::ENDMODULE; }
 input     { return token::INPUT; } 
 output    { return token::OUTPUT; }
 inout     { return token::INOUT; }
-wire      { return token::WIRE; }
 reg       { return token::REG; }
+wire      { return token::WIRE; } 
+wor       { return token::WOR; }
+wand      { return token::WAND; }
+tri       { return token::TRI; }
+trior     { return token::TRIOR; }
+triand    { return token::TRIAND; }
+SUPPLY0   { return token::SUPPLY0; }
+SUPPLY1   { return token::SUPPLY1; }
 
 
 
