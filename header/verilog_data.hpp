@@ -152,6 +152,7 @@ namespace verilog {
     int beg {-1};
     int end {-1};
   };
+
   
   struct Assignment {
     // Left hand side can be: a wire, a bit in a wire, a part of a wire  
@@ -190,8 +191,19 @@ namespace verilog {
   }
 
 
-  struct Inst {
+
+  using NetConcat = std::variant<std::string, NetBit, NetPart, Constant>;
+
+  struct Instance {
+    std::string module_name;
+    std::string inst_name;
+  
+    std::vector<std::variant<std::string, NetBit, NetPart>> pin_names;
+    std::vector<std::vector<NetConcat>> net_names;
   };
+
+
+
 
 
 } 

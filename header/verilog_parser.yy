@@ -46,6 +46,11 @@
 %define api.value.type variant
 %define parse.assert
 
+
+%left '-' '+'
+%left '*' '/'
+%left UMINUS
+
 %token              END    0     "end of file"
 %token<std::string> UPPER
 %token<std::string> LOWER
@@ -65,7 +70,6 @@
 
 /* Nonterminal Symbols */
 %type<std::string> valid_name  
-%type<std::variant<verilog::Net, verilog::Inst>> clauses 
 
 %type<std::pair<verilog::PortDirection, verilog::ConnectionType>> port_type 
 %type<verilog::Port> port_decls port_decl 
@@ -76,8 +80,14 @@
 %type<verilog::Constant> constant
 %type<verilog::Assignment> assignment 
 %type<std::vector<std::variant<std::string, verilog::NetBit, verilog::NetPart>>> lhs lhs_concat lhs_exprs lhs_expr
-%type<std::vector<std::variant<std::string, verilog::NetBit, verilog::NetPart, verilog::Constant>>> rhs rhs_concat rhs_exprs rhs_expr
+%type<std::vector<verilog::NetConcat>> rhs rhs_concat rhs_exprs rhs_expr 
 
+%type<verilog::Instance> instance  
+%type<std::pair<std::vector<std::variant<std::string, NetBit, NetPart>>, std::vector<std::vector<verilog::NetConcat>>>> inst_pins nets_by_name 
+
+%type<std::vector<std::vector<verilog::NetConcat>>> nets_by_position
+
+%type<std::pair<std::variant<std::string, NetBit, NetPart>, std::vector<verilog::NetConcat>>> net_by_name 
 
 %locations 
 %start design
@@ -248,6 +258,8 @@ assignment
   : lhs '=' rhs { std::swap($$.lhs, $1); std::swap($$.rhs, $3); driver->add_assignment(std::move($$)); }
   ;
 
+
+// Should try to merge lhs & rhs definition
 lhs
   : valid_name { $$.emplace_back($1); }
   | valid_name '[' INTEGER ']' 
@@ -292,7 +304,6 @@ constant
   | EXP  { $$=$1; }
   ;
 
-
 rhs
   : valid_name { $$.emplace_back($1); }
   | valid_name '[' INTEGER ']' 
@@ -332,13 +343,126 @@ rhs_expr
 
 
 instance 
-  :
+  : valid_name valid_name '(' inst_pins ')' ';'
+    { 
+      $$.module_name = $1; 
+      $$.inst_name = $2; 
+      std::swap($$.pin_names, std::get<0>($4));  
+      std::swap($$.net_names, std::get<1>($4));  
+    }
+  | valid_name parameters valid_name '(' inst_pins ')' ';'
+    { 
+      $$.module_name = $1; 
+      $$.inst_name = $3; 
+      std::swap($$.pin_names, std::get<0>($5));  
+      std::swap($$.net_names, std::get<1>($5));  
+    }
+  ;
+
+inst_pins 
+  : // empty
+  | nets_by_position { std::swap(std::get<1>($$), $1); }
+  | nets_by_name 
+  {
+    std::swap(std::get<0>($$), std::get<0>($1));
+    std::swap(std::get<1>($$), std::get<1>($1));
+  }
+  ;
+
+nets_by_position
+  : rhs { $$.emplace_back(std::move($1)); }
+  | nets_by_position ',' rhs
+    { 
+      std::move($1.begin(), $1.end(), std::back_inserter($$));   
+      $$.emplace_back(std::move($3));
+    }
+  ;
+  
+
+nets_by_name 
+  : net_by_name 
+    { 
+      std::get<0>($$).emplace_back(std::move(std::get<0>($1))); 
+      std::get<1>($$).emplace_back(std::move(std::get<1>($1))); 
+    }
+  | nets_by_name ',' net_by_name 
+    { 
+      auto &pin_names = std::get<0>($1);
+      auto &net_names = std::get<1>($1);
+      std::move(pin_names.begin(), pin_names.end(), std::back_inserter(std::get<0>($$)));
+      std::move(net_names.begin(), net_names.end(), std::back_inserter(std::get<1>($$)));
+
+      std::get<0>($$).emplace_back(std::move(std::get<0>($3))); 
+      std::get<1>($$).emplace_back(std::move(std::get<1>($3))); 
+    }
   ;
 
 
+net_by_name
+  : '.' valid_name '(' ')' 
+    { std::get<0>($$) = $2; } 
+  | '.' valid_name '(' valid_name ')' 
+    { 
+       std::get<0>($$) = $2; 
+       std::get<1>($$).emplace_back(std::move($4)); 
+    } 
+  | '.' valid_name '(' valid_name '[' INTEGER ']' ')' 
+    { 
+      std::get<0>($$) = $2; 
+      std::get<1>($$).emplace_back(verilog::NetBit(std::move($4), std::stoi($6.value))); 
+    } 
+  // The previous two rules are also in rhs. But I don't want to create special rule just for this case 
+  | '.' valid_name '(' rhs ')' 
+    { 
+      std::get<0>($$) = $2; 
+      std::swap(std::get<1>($$), $4); 
+    }
+  // Bus port bit 
+  | '.' valid_name '[' INTEGER ']' '(' ')'
+    {
+      std::get<0>($$) = verilog::NetBit(std::move($2), std::stoi($4.value)); 
+    }
+  | '.' valid_name '[' INTEGER ']' '(' rhs ')'
+    {
+      std::get<0>($$) = verilog::NetBit(std::move($2), std::stoi($4.value)); 
+      std::swap(std::get<1>($$), $7); 
+    }
+  // Bus port part 
+  | '.' valid_name '[' INTEGER ':' INTEGER ']' '(' ')'
+    {
+      std::get<0>($$) = verilog::NetPart(std::move($2), std::stoi($4.value), std::stoi($6.value)); 
+    }
+  | '.' valid_name '[' INTEGER ':' INTEGER ']' '(' rhs ')'
+    {
+      std::get<0>($$) = verilog::NetPart(std::move($2), std::stoi($4.value), std::stoi($6.value)); 
+      std::swap(std::get<1>($$), $9); 
+    }
+  ;
 
 
- 
+// parameters are ignored for now
+parameters 
+  : '#' '(' param_exprs ')'
+  ;
+
+param_exprs
+  : param_expr 
+  | param_exprs ',' param_expr
+  ;
+
+param_expr 
+  : valid_name 
+  | '`' valid_name 
+  | constant 
+  | '-' param_expr %prec UMINUS 
+  | param_expr '+' param_expr
+  | param_expr '-' param_expr
+  | param_expr '*' param_expr
+  | param_expr '/' param_expr
+  | '(' param_expr ')'
+  ;
+
+
 %%
 
 void verilog::VerilogParser::error(const location_type &l, const std::string &err_message) {

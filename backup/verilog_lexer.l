@@ -102,7 +102,7 @@ trior     { return token::TRIOR; }
 triand    { return token::TRIAND; }
 SUPPLY0   { return token::SUPPLY0; }
 SUPPLY1   { return token::SUPPLY1; }
-
+assign    { return token::ASSIGN; }
 
 
 {ESCAPED_NAME}  { 
@@ -116,37 +116,37 @@ SUPPLY1   { return token::SUPPLY1; }
 }
 
 {INTEGER} {
-            yylval->build<std::string>(verilog::Constant(std::move(yytext), verilog::ConstantType::INTEGER));
+            yylval->build<verilog::Constant>(verilog::Constant(yytext, verilog::ConstantType::INTEGER)); 
             return token::INTEGER;
           }
 
 {BINARY} {
-            yylval->build<std::string>(yytext);
-            return token::BINARY;
+           yylval->build<verilog::Constant>(verilog::Constant(yytext, verilog::ConstantType::BINARY));
+           return token::BINARY;
          }
 
 {OCTAL} {
-          yylval->build<std::string>(yytext);
+          yylval->build<verilog::Constant>(verilog::Constant(yytext, verilog::ConstantType::OCTAL));
           return token::OCTAL;
         }
 
 {DECIMAL} {
-            yylval->build<std::string>(yytext);
+            yylval->build<verilog::Constant>(verilog::Constant(yytext, verilog::ConstantType::DECIMAL));
             return token::DECIMAL;
           }
 
 {HEX} {
-        yylval->build<std::string>(yytext);
+        yylval->build<verilog::Constant>(verilog::Constant(yytext, verilog::ConstantType::HEX));
         return token::HEX;
       }
 
 {REAL} {
-         yylval->build<std::string>(yytext);
+         verilog::Constant c(yytext, verilog::ConstantType::REAL);
          return token::REAL;
        }
 
 {EXP} {
-        yylval->build<std::string>(yytext);
+        verilog::Constant c(yytext, verilog::ConstantType::EXP);
         return token::EXP;
       }
 

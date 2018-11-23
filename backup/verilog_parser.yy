@@ -46,6 +46,11 @@
 %define api.value.type variant
 %define parse.assert
 
+
+%left '-' '+'
+%left '*' '-'
+%left UMINUS
+
 %token              END    0     "end of file"
 %token<std::string> UPPER
 %token<std::string> LOWER
@@ -60,18 +65,27 @@
 %token<verilog::Constant> INTEGER BINARY OCTAL DECIMAL HEX REAL EXP
 
 /* Keyword tokens */
-%token MODULE ENDMODULE INPUT OUTPUT INOUT REG WIRE WAND WOR TRI TRIOR TRIAND SUPPLY0 SUPPLY1
+%token MODULE ENDMODULE INPUT OUTPUT INOUT REG WIRE WAND WOR TRI TRIOR TRIAND SUPPLY0 SUPPLY1 ASSIGN
 
 
 /* Nonterminal Symbols */
 %type<std::string> valid_name  
-%type<std::variant<verilog::Net, verilog::Inst>> clauses 
 
 %type<std::pair<verilog::PortDirection, verilog::ConnectionType>> port_type 
 %type<verilog::Port> port_decls port_decl 
 
 %type<verilog::NetType> net_type
 %type<verilog::Net> net_decls net_decl 
+
+%type<verilog::Constant> constant
+%type<verilog::Assignment> assignment 
+%type<std::vector<std::variant<std::string, verilog::NetBit, verilog::NetPart>>> lhs lhs_concat lhs_exprs lhs_expr
+%type<std::vector<std::variant<std::string, verilog::NetBit, verilog::NetPart, verilog::Constant>>> rhs rhs_concat rhs_exprs rhs_expr pins_by_position
+
+%type<verilog::Instance> instance 
+%type<std::pair<std::vector<std::variant<std::string, NetBit, NetPart>>, std::vector<std::variant<std::string, NetBit, NetPart, Constant>>>> inst_pins pins_by_name 
+
+%type<std::pair<std::variant<std::string, NetBit, NetPart>>, std::vector<std::variant<std::string, NetBit, NetPart, Constant>>> pin_by_name 
 
 %locations 
 %start design
@@ -162,8 +176,8 @@ port_decl
     {
       $$.dir  = std::get<0>($1);
       $$.type = std::get<1>($1);
-      //$$.beg = std::stoi($3.value);
-      //$$.end = std::stoi($5.value);
+      $$.beg = std::stoi($3.value);
+      $$.end = std::stoi($5.value);
       $$.names.emplace_back($7); 
     }
   ;
@@ -171,7 +185,7 @@ port_decl
 clauses 
   : // empty
   | clauses clause 
-
+  | clauses clause_assign
   ; 
 
 clause
@@ -223,15 +237,13 @@ net_decl
   | net_type '[' INTEGER ':' INTEGER ']' valid_name  
     {
       $$.type = $1;
-      //$$.beg = std::stoi($3.value);
-      //$$.end = std::stoi($5.value);
+      $$.beg = std::stoi($3.value);
+      $$.end = std::stoi($5.value);
       $$.names.emplace_back($7); 
     }
   ;
 
 
-/*
-  | clauses clause_assign
 clause_assign
   : ASSIGN assignments ';'
 
@@ -241,46 +253,185 @@ assignments
   ;
 
 assignment
-  : 
+  : lhs '=' rhs { std::swap($$.lhs, $1); std::swap($$.rhs, $3); driver->add_assignment(std::move($$)); }
+  ;
 
-*/
+
+// Should try to merge lhs & rhs definition
+lhs
+  : valid_name { $$.emplace_back($1); }
+  | valid_name '[' INTEGER ']' 
+    { $$.emplace_back(verilog::NetBit(std::move($1), std::stoi($3.value))); }
+  | valid_name '[' INTEGER ':' INTEGER ']' 
+    { $$.emplace_back(verilog::NetPart(std::move($1), std::stoi($3.value), std::stoi($5.value))); }
+  | lhs_concat { $$ = $1; }
+  ;
+ 
+lhs_concat
+  : '{' lhs_exprs '}' { std::move($2.begin(), $2.end(), std::back_inserter($$)); }
+  ; 
+
+lhs_exprs 
+  : lhs_expr { std::move($1.begin(), $1.end(), std::back_inserter($$)); }
+  | lhs_exprs ',' lhs_expr 
+    { 
+      std::move($1.begin(), $1.end(), std::back_inserter($$));
+      std::move($3.begin(), $3.end(), std::back_inserter($$));
+    } 
+  ;
+
+lhs_expr 
+  : valid_name { $$.emplace_back($1); }
+  | valid_name '[' INTEGER ']' 
+    { $$.emplace_back(verilog::NetBit(std::move($1), std::stoi($3.value))); }
+  | valid_name '[' INTEGER ':' INTEGER ']' 
+    { $$.emplace_back(verilog::NetPart(std::move($1), std::stoi($3.value), std::stoi($5.value))); }
+  | lhs_concat 
+    { std::move($1.begin(), $1.end(), std::back_inserter($$)); }
+  ;
+
+
+
+constant
+  : INTEGER  { $$=$1; }
+  | BINARY { $$=$1; }
+  | OCTAL { $$=$1; } 
+  | DECIMAL { $$=$1; }
+  | HEX { $$=$1; }
+  | REAL { $$=$1; }
+  | EXP  { $$=$1; }
+  ;
+
+
+rhs
+  : valid_name { $$.emplace_back($1); }
+  | valid_name '[' INTEGER ']' 
+    { $$.emplace_back(verilog::NetBit(std::move($1), std::stoi($3.value))); }
+  | valid_name '[' INTEGER ':' INTEGER ']' 
+    { $$.emplace_back(verilog::NetPart(std::move($1), std::stoi($3.value), std::stoi($5.value))); } 
+  | constant { $$.emplace_back(std::move($1)); }
+  | rhs_concat { $$ = $1; }
+  ;
+ 
+rhs_concat
+  : '{' rhs_exprs '}' { std::move($2.begin(), $2.end(), std::back_inserter($$)); }
+  ; 
+
+rhs_exprs 
+  : rhs_expr { std::move($1.begin(), $1.end(), std::back_inserter($$)); }
+  | rhs_exprs ',' rhs_expr 
+    { 
+      std::move($1.begin(), $1.end(), std::back_inserter($$));
+      std::move($3.begin(), $3.end(), std::back_inserter($$));
+    } 
+  ;
+
+rhs_expr 
+  : valid_name { $$.emplace_back($1); }
+  | valid_name '[' INTEGER ']' 
+    { $$.emplace_back(verilog::NetBit(std::move($1), std::stoi($3.value))); }
+  | valid_name '[' INTEGER ':' INTEGER ']' 
+    { $$.emplace_back(verilog::NetPart(std::move($1), std::stoi($3.value), std::stoi($5.value))); } 
+  | constant { $$.emplace_back(std::move($1)); }
+  | rhs_concat 
+    { std::move($1.begin(), $1.end(), std::back_inserter($$)); }
+  ;
+
+
+
 
 
 instance 
-  :
+  : valid_name valid_name '(' inst_pins ')' ';'
+    { 
+      $$.module_name = $1; 
+      $$.inst_name = $2; 
+      std::swap($$.pin_names, std::get<0>($4);  
+      std::swap($$.net_names, std::get<1>($4);  
+    }
+  | valid_name parameters valid_name '(' inst_pins ')' ';'
+    { 
+      $$.module_name = $1; 
+      $$.inst_name = $2; 
+      std::swap($$.pin_names, std::get<0>($5);  
+      std::swap($$.net_names, std::get<1>($5);  
+    }
+  ;
+
+inst_pins 
+  : // empty
+  | pins_by_position { std::swap($$.net_names, $1); }
+  | pins_by_name 
+  {
+    std::swap($$.pin_names, std::get<0>($1));
+    std::swap($$.net_names, std::get<1>($1));
+  }
+  ;
+
+pins_by_position
+  : rhs { std::swap($$, $1); }
+  ;
+  
+pins_by_name 
+  : pin_by_name 
+    { 
+      std::get<0>($$).emplace_back(std::move(std::get<0>($1))); 
+      std::get<1>($$).emplace_back(std::move(std::get<1>($1))); 
+    }
+  | pins_by_names ',' pin_by_name 
+    { 
+      auto &pin_names = std::get<0>($1);
+      auto &net_names = std::get<1>($1);
+      std::move(pin_name.begin(), pin_name.end(), std::back_inserter(std::get<0>($$)));
+      std::move(net_name.begin(), net_name.end(), std::back_inserter(std::get<1>($$)));
+
+      std::get<0>($$).emplace_back(std::move(std::get<0>($3))); 
+      std::get<1>($$).emplace_back(std::move(std::get<1>($3))); 
+    }
+  ;
+
+// std::pair<std::variant<std::string, NetBit, NetPart>>, std::vector<std::variant<std::string, NetBit, NetPart, Constant>>
+pin_by_name
+  : '.' valid_name '(' ')' 
+    { std::swap(std::get<0>($$), $2); } 
+  | '.' valid_name '(' valid_name ')' 
+    { std::swap(std::get<0>($$), $2); std::swap(std::get<1>($$), $4); } 
+  | '.' valid_name '(' valid_name '[' INTEGER ']' ')' 
+    { 
+      std::swap(std::get<0>($$), $2); 
+      std::swap(std::get<1>($$), verilog::NetBit(std::move($4), std::stoi($6.value))); 
+    } 
+  | '.' valid_name '('  ')' 
+
+
+
+
+
+
+
+// parameters are ignored for now
+parameters 
+  : '#' '(' param_exprs ')'
+  ;
+
+param_exprs
+  : param_expr 
+  | param_exprs, param_expr
+  ;
+
+param_expr 
+  : valid_name 
+  | '`' valid_name 
+  | constant 
+  | '-' param_expr %prec UMINUS 
+  | param_expr '+' param_expr
+  | param_expr '-' param_expr
+  | param_expr '*' param_expr
+  | param_expr '/' param_expr
+  | '(' param_expr ')'
   ;
 
 
-
-
-/*
-list_option : END | list END;
-
-list
-  : item
-  | list item
-  ;
-
-item
-  : 
-  | EXP       { std::cout << "EXP = " << $1 << '\n'; }
-  | REAL      { std::cout << "REAL = " << $1 << '\n'; }
-  | HEX       { std::cout << "HEX = " << $1 << '\n'; }
-  | DECIMAL   { std::cout << "DECIMAL = " << $1 << '\n'; }
-  | OCTAL     { std::cout << "OCTAL = " << $1 << '\n'; }
-  | BINARY    { std::cout << "BINARY = " << $1 << '\n'; }
-  | INTEGER   { std::cout << "INT = " << $1 << '\n'; }
-  | NAME      { std::cout << "NAMED = " << $1 << '\n'; }
-  | ESCAPED_NAME  { std::cout << "ESCAPED_NAME =\"" << $1 << "\"\n"; }
-
-  | UPPER     { std::cout << "upper " << $1 << '\n'; }
-  | LOWER     { std::cout << "lower " << $1 << '\n'; }
-  | WORD      { std::cout << "word  " << $1 << '\n'; }
-  | NEWLINE   { std::cout << "newline \n"; }
-  | UNDEFINED { std::cout << "UNDEFINED " << '\n'; }
-  ;
-
-*/ 
 %%
 
 void verilog::VerilogParser::error(const location_type &l, const std::string &err_message) {
