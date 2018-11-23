@@ -105,14 +105,9 @@ EXP            [-+]?[0-9]+"."?[0-9]*"E"[-+]?[0-9]+
 <in_attribute>{ATTRIBUTE_END} { BEGIN(INITIAL); }
 
 
-
 ":"|"."|"{"|"}"|"["|"]"|","|"*"|";"|"="|"-"|"+"|"|"|"("|")" {
   return yytext[0];
 }
-
-
-
-
 
 module    { return token::MODULE; }
 endmodule { return token::ENDMODULE; }
@@ -175,7 +170,6 @@ assign    { return token::ASSIGN; }
         verilog::Constant c(yytext, verilog::ConstantType::EXP);
         return token::EXP;
       }
-
 
 
 

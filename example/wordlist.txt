@@ -1,5 +1,5 @@
-module QQ;  
-//module Q2(input wire A1, A2, B2, output C1, AREWR, inout [0:10] GG); 
+//module QQ();  
+module Q2(input wire A1, A2, B2, output C1, AREWR, inout [0:10] GG); 
 //module Q3(input wire A1, A2,  B1, z2);
 //  input [0:10] GG, aaaa;
 //output TT;
@@ -8,15 +8,14 @@ module QQ;
 //output TTtt;
 //wand [10:0] www;
 //
-assign {qq, zz[10], {gg[45], bb}} = {zz [10], 123} , mm = nn;
+//assign {qq, zz[10], {gg[45], bb}} = {zz [10], 123} , mm = nn;
 
-wire \wwww.a_b_c ;
-wire [15:0] \imem.rd_addr ;
+//wire \wwww.a_b_c ;
+//wire [15:0] \imem.rd_addr ;
 
-//assign qq = {tt[2]};
-//my_module my_inst({kk9[9], bcd});
-//my_module my_inst2(.a(b), .c(gg[10]));   
+assign qq = {tt[2]};
+my_module my_inst({kk9[9], bcd});
+my_module my_inst2(.a(b), .c(gg[10]));   
 my_module my_inst1();  
-my_module my_inst3(b, gg[10], tt[23:45], {kk[9], pp, bajwe[124:2351], {b[6],
-    uuwe[12321:41], lkk[0]}});
+my_module my_inst3(b, gg[10], tt[23:45], {kk[9], pp, bajwe[124:2351], {b[6], uuwe[12321:41], lkk[0]}});
 endmodule

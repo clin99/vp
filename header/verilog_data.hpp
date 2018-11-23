@@ -162,7 +162,6 @@ namespace verilog {
     os << n.name << '[' << n.beg << ':' << n.end << "] ";
     return os;
   }
-
   
   struct Assignment {
     // Left hand side can be: a wire, a bit in a wire, a part of a wire  
@@ -171,7 +170,6 @@ namespace verilog {
     // Right hand side can be: a wire, a bit in a wire, a part of a wire, a constant
     std::vector<std::variant<std::string, NetBit, NetPart, Constant>> rhs;
   };
-
 
   inline std::ostream& operator<<(std::ostream& os, const Assignment& ast) {  
     os << "LHS: ";
@@ -199,8 +197,6 @@ namespace verilog {
 
     return os;  
   }
-
-
 
   using NetConcat = std::variant<std::string, NetBit, NetPart, Constant>;
 

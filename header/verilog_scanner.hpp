@@ -15,8 +15,7 @@ class VerilogScanner : public yyFlexLexer{
 
     VerilogScanner(std::istream *in) : yyFlexLexer(in) {
     };
-    virtual ~VerilogScanner() {
-    };
+    virtual ~VerilogScanner() {};
 
     //get rid of override virtual function warning
     using FlexLexer::yylex;

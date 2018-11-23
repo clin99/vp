@@ -15,8 +15,8 @@ namespace verilog {
 class ParserVerilogInterface {
   public:
     virtual ~ParserVerilogInterface(){
-      if(!_scanner) delete _scanner;
-      if(!_parser) delete _parser;
+      if(_scanner) delete _scanner;
+      if(_parser) delete _parser;
     }
     virtual void add_module(const std::string&) = 0;
     // port names, begin index, end index, port type (IOB), connection type (wire, reg)
@@ -51,6 +51,8 @@ inline void ParserVerilogInterface::read(const std::experimental::filesystem::pa
 
 
 struct SampleParser : public ParserVerilogInterface {
+  virtual ~SampleParser(){}
+
   void add_module(const std::string& name){
     std::cout << "Module name = " << name << '\n';
   }
@@ -75,7 +77,7 @@ struct SampleParser : public ParserVerilogInterface {
       std::cout << "\nAdd instance: \n" << inst << '\n';
   }
   
-  bool show {true};
+  bool show {false};
 };
 
 

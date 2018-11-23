@@ -94,13 +94,10 @@
 
 %%
 
-
 valid_name
   : NAME { $$ = $1; }
   | ESCAPED_NAME { $$ = $1; }
   ;
-
-
 
 design 
   : modules;
@@ -127,10 +124,14 @@ module
     }
     clauses ENDMODULE
   | MODULE valid_name '(' 
-      { driver->add_module($2); } 
+    { 
+      driver->add_module($2); 
+    } 
     port_decls ')' 
-      { driver->add_port(std::move($5)); } ';' 
-    clauses ENDMODULE 
+    { 
+      driver->add_port(std::move($5)); 
+    }
+    ';' clauses ENDMODULE 
   ;
 
 // port names are ignored as they will be parsed later in declaration
@@ -365,10 +366,10 @@ inst_pins
   : { } // empty
   | nets_by_position { std::swap(std::get<1>($$), $1); }
   | nets_by_name 
-  {
-    std::swap(std::get<0>($$), std::get<0>($1));
-    std::swap(std::get<1>($$), std::get<1>($1));
-  }
+    {
+      std::swap(std::get<0>($$), std::get<0>($1));
+      std::swap(std::get<1>($$), std::get<1>($1));
+    }
   ;
 
 nets_by_position
