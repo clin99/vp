@@ -10,6 +10,7 @@
 
 
 namespace verilog {
+
   enum class ConstantType {
     NONE,
     INTEGER,
@@ -22,7 +23,7 @@ namespace verilog {
   };
 
   inline std::ostream& operator<<(std::ostream& os, const ConstantType& t) {  
-    switch(t){
+    switch(t) {
       case ConstantType::NONE:    os << "NONE";    break; 
       case ConstantType::INTEGER: os << "INTEGER"; break;
       case ConstantType::BINARY:  os << "BINARY";  break; 
@@ -93,7 +94,6 @@ namespace verilog {
     }
     return os;  
   }
-
 
   enum class NetType {
     NONE,

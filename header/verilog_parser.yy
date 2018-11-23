@@ -111,18 +111,21 @@ modules
   ;
 
 module
-  : MODULE valid_name ';' clauses ENDMODULE  
+  : MODULE valid_name ';' 
     { 
       driver->add_module($2);
     }
-  | MODULE valid_name '(' ')' ';' clauses ENDMODULE   
+    clauses ENDMODULE  
+  | MODULE valid_name '(' ')' ';'
     {
       driver->add_module($2);
     }
-  | MODULE valid_name '(' port_names ')' ';' clauses ENDMODULE  
+    clauses ENDMODULE
+  | MODULE valid_name '(' port_names ')' ';' 
     {
       driver->add_module($2);
     }
+    clauses ENDMODULE
   | MODULE valid_name '(' 
       { driver->add_module($2); } 
     port_decls ')' 
