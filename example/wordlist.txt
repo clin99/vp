@@ -9,4 +9,8 @@ output TTtt;
 wand [10:0] www;
 
 assign {qq, zz[10], {gg[45], bb}} = {zz [10], 123} , mm = nn;
+
+
+my_module my_inst();
+my_module my_inst2(.a(b), .c(gg[10]));
 endmodule

@@ -24,7 +24,7 @@ class ParserVerilogInterface {
     virtual void add_port(Port&&) = 0;
     virtual void add_net(Net&&) = 0;
     virtual void add_assignment(Assignment&&) = 0;
-
+    virtual void add_instance(Instance&&) = 0;
 
     void read(const std::experimental::filesystem::path&); 
 
@@ -66,6 +66,11 @@ struct ParserVerilog : public ParserVerilogInterface {
   void add_assignment(Assignment&& ast) {
     std::cout << "\nAdd assignment: \n" << ast << '\n';
   }  
+
+  void add_instance(Instance&& inst) {
+    std::cout << "\nAdd instance: \n" << inst << '\n';
+  }  
+
 
 };
 

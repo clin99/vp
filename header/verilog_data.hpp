@@ -202,7 +202,11 @@ namespace verilog {
     std::vector<std::vector<NetConcat>> net_names;
   };
 
-
+  inline std::ostream& operator<<(std::ostream& os, const Instance& inst) {  
+    os << inst.module_name << ' ' << inst.inst_name << '(';
+    os << ')';
+    return os;
+  }
 
 
 

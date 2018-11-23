@@ -349,6 +349,7 @@ instance
       $$.inst_name = $2; 
       std::swap($$.pin_names, std::get<0>($4));  
       std::swap($$.net_names, std::get<1>($4));  
+      driver->add_instance(std::move($$));
     }
   | valid_name parameters valid_name '(' inst_pins ')' ';'
     { 
@@ -356,6 +357,7 @@ instance
       $$.inst_name = $3; 
       std::swap($$.pin_names, std::get<0>($5));  
       std::swap($$.net_names, std::get<1>($5));  
+      driver->add_instance(std::move($$));
     }
   ;
 
