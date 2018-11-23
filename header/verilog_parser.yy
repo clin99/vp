@@ -128,9 +128,6 @@ module
     port_decls ')' 
       { driver->add_port(std::move($5)); } ';' 
     clauses ENDMODULE 
-    { 
-      
-    }
   ;
 
 // port names are ignored as they will be parsed later in declaration
@@ -362,7 +359,7 @@ instance
   ;
 
 inst_pins 
-  : // empty
+  : { } // empty
   | nets_by_position { std::swap(std::get<1>($$), $1); }
   | nets_by_name 
   {

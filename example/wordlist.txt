@@ -15,7 +15,8 @@ wire [15:0] \imem.rd_addr ;
 
 //assign qq = {tt[2]};
 //my_module my_inst({kk9[9], bcd});
-//my_module my_inst2(.a(b), .c(gg[10]));  
+//my_module my_inst2(.a(b), .c(gg[10]));   
+my_module my_inst1();  
 my_module my_inst3(b, gg[10], tt[23:45], {kk[9], pp, bajwe[124:2351], {b[6],
     uuwe[12321:41], lkk[0]}});
 endmodule

@@ -83,7 +83,6 @@ EXP            [-+]?[0-9]+"."?[0-9]*"E"[-+]?[0-9]+
 
 {COMMENT_LINE}  { loc->lines(); }
 
-
 {COMMENT_BEGIN} { BEGIN(in_comment); }
 <in_comment><<EOF>> { 
                       BEGIN(INITIAL);
