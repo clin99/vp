@@ -146,12 +146,22 @@ namespace verilog {
     int bit {-1};
   };
 
+  inline std::ostream& operator<<(std::ostream& os, const NetBit& n) {  
+    os << n.name << '[' << n.bit << "] ";
+    return os;
+  }
+
   struct NetPart {
     NetPart(std::string&& n, int b, int e): name(n), beg(b), end(e) {}
     std::string name;
     int beg {-1};
     int end {-1};
   };
+
+  inline std::ostream& operator<<(std::ostream& os, const NetPart& n) {  
+    os << n.name << '[' << n.beg << ':' << n.end << "] ";
+    return os;
+  }
 
   
   struct Assignment {
@@ -204,6 +214,37 @@ namespace verilog {
 
   inline std::ostream& operator<<(std::ostream& os, const Instance& inst) {  
     os << inst.module_name << ' ' << inst.inst_name << '(';
+
+    if(!inst.pin_names.empty()){
+      for(size_t i=0; i<inst.pin_names.size(); i++){
+        std::visit([](const auto& name){ std::cout << name << ' '; }, inst.pin_names[i]);
+        std::cout << '(' ;
+        if(inst.net_names[i].size() > 1){
+          std::cout <<  '{';
+        }
+        for(const auto& v: inst.net_names[i]){
+          std::visit([](const auto& v){ std::cout << v << ' '; }, v);
+        }
+        if(inst.net_names[i].size() > 1){
+          std::cout <<  '}';
+        }
+        std::cout << ") " ;
+      }
+    }
+    else{
+      for(size_t i=0; i<inst.net_names.size(); i++){
+        if(inst.net_names[i].size() > 1){
+          std::cout <<  '{';
+        }
+        for(const auto& v: inst.net_names[i]){
+          std::visit([](const auto& v){ std::cout << v << ' '; }, v);
+        }
+        if(inst.net_names[i].size() > 1){
+          std::cout <<  '}';
+        }
+        std::cout << ',';
+      }
+    }
     os << ')';
     return os;
   }
