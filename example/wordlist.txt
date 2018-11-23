@@ -8,11 +8,14 @@ module Q2(input wire A1, A2, B2, output C1, AREWR, inout [0:10] GG);
 //output TTtt;
 //wand [10:0] www;
 //
-//assign {qq, zz[10], {gg[45], bb}} = {zz [10], 123} , mm = nn;
+assign {qq, zz[10], {gg[45], bb}} = {zz [10], 123} , mm = nn;
 
+wire \wwww.a_b_c ;
+wire [15:0] \imem.rd_addr ;
 
 //assign qq = {tt[2]};
-my_module my_inst({kk9[9], bcd});
-//my_module my_inst2(.a(b), .c(gg[10])); 
-//my_module my_inst3(b, gg[10], tt[23:45], {kk[9], pp});
+//my_module my_inst({kk9[9], bcd});
+//my_module my_inst2(.a(b), .c(gg[10]));  
+my_module my_inst3(b, gg[10], tt[23:45], {kk[9], pp, bajwe[124:2351], {b[6],
+    uuwe[12321:41], lkk[0]}});
 endmodule

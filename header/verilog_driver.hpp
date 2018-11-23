@@ -56,19 +56,19 @@ struct ParserVerilog : public ParserVerilogInterface {
   }
   void add_input(const std::string&){}
   void add_port(Port&& port) {
-    std::cout << "\nAdd Port: \n" << port << '\n';
+    //std::cout << "\nAdd Port: \n" << port << '\n';
   }  
 
   void add_net(Net&& net) {
-    std::cout << "\nAdd Net: \n" << net << '\n';
+    //std::cout << "\nAdd Net: \n" << net << '\n';
   }  
 
   void add_assignment(Assignment&& ast) {
-    std::cout << "\nAdd assignment: \n" << ast << '\n';
+    //std::cout << "\nAdd assignment: \n" << ast << '\n';
   }  
 
   void add_instance(Instance&& inst) {
-    std::cout << "\nAdd instance: \n" << inst << '\n';
+    //std::cout << "\nAdd instance: \n" << inst << '\n';
   }  
 
 

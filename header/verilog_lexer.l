@@ -40,6 +40,7 @@ using token = verilog::VerilogParser::token;
 
 /* Define inclusive/exclusive states */
 %x in_comment 
+%x in_attribute
 
 /* Predefined rules */
 NEWLINE         "\n"|"\r\n"
@@ -48,9 +49,16 @@ COMMENT_BEGIN   "/*"
 COMMENT_END     "*/" 
 COMMENT_LINE  "//".*\n
 
+ATTRIBUTE_BEGIN "(*"
+ATTRIBUTE_END   "*)"
+
 /* Name rule http://www.asic-world.com/verilog/syntax1.html */
 NAME           [_a-zA-Z][$_a-zA-Z0-9]*{0,1023}
-ESCAPED_NAME   ^\\[\^!"#$%&()*+\-.a-zA-Z0-9{|}~\[\]]+[\t\f ]
+/* 
+   Check the escape rule inside character class 
+   https://www.regular-expressions.info/charclass.html
+ */
+ESCAPED_NAME   \\[\\^!"#$%&',()*+\-.a-zA-Z0-9{|}~[\]_:;<=>?@]+[\t\f ]
 INTEGER        [1-9][0-9]*|0
 BINARY         [+-]?[0-9]*"'"[Bb][01_xXzZ]+
 OCTAL          [+-]?[0-9]*"'"[Oo][0-7_xXzZ]+ 
@@ -72,6 +80,10 @@ EXP            [-+]?[0-9]+"."?[0-9]*"E"[-+]?[0-9]+
              // return( token::NEWLINE ); 
            }
 
+
+{COMMENT_LINE}  { loc->lines(); }
+
+
 {COMMENT_BEGIN} { BEGIN(in_comment); }
 <in_comment><<EOF>> { 
                       BEGIN(INITIAL);
@@ -82,11 +94,26 @@ EXP            [-+]?[0-9]+"."?[0-9]*"E"[-+]?[0-9]+
 <in_comment>. { /* ignore characters in comment */ }
 <in_comment>{COMMENT_END} { BEGIN(INITIAL); }
 
-{COMMENT_LINE}  { loc->lines(); }
+
+{ATTRIBUTE_BEGIN} { BEGIN(in_attribute); }
+<in_attribute><<EOF>> { 
+                      BEGIN(INITIAL);
+                      std::cerr << "Unclosed attribute at line " << loc->end.line << " col " << loc->end.column << '\n';
+                      yyterminate();
+                    }
+<in_attribute>{NEWLINE} { loc->lines(); }
+<in_attribute>. { /* ignore characters in comment */ }
+<in_attribute>{ATTRIBUTE_END} { BEGIN(INITIAL); }
+
+
 
 ":"|"."|"{"|"}"|"["|"]"|","|"*"|";"|"="|"-"|"+"|"|"|"("|")" {
   return yytext[0];
 }
+
+
+
+
 
 module    { return token::MODULE; }
 endmodule { return token::ENDMODULE; }
@@ -106,7 +133,7 @@ assign    { return token::ASSIGN; }
 
 
 {ESCAPED_NAME}  { 
-  yylval->build<std::string>( yytext );
+  yylval->build<std::string>(yytext);
   return token::ESCAPED_NAME;
 }
 
