@@ -204,6 +204,7 @@ namespace verilog {
     std::string module_name;
     std::string inst_name;
   
+    // pin_names might be empty. e.g. my_module m1(net1, net2);
     std::vector<std::variant<std::string, NetBit, NetPart>> pin_names;
     std::vector<std::vector<NetConcat>> net_names;
   };
