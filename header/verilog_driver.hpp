@@ -110,7 +110,7 @@ struct Module {
 
 struct OpenTimerParser : public ParserVerilogInterface {
   OpenTimerParser() = default;
-  ~OpenTimerParser(){}
+  virtual ~OpenTimerParser(){}
 
   void add_module(const std::string& name){ module.name = name; }
 
