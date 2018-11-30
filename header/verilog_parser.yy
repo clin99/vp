@@ -72,10 +72,10 @@
 %type<std::string> valid_name  
 
 %type<std::pair<verilog::PortDirection, verilog::ConnectionType>> port_type 
-%type<verilog::Port> port_decls port_decl 
+%type<verilog::Port> port_decls port_decl port_decl_clauses
 
 %type<verilog::NetType> net_type
-%type<verilog::Net> net_decls net_decl 
+%type<verilog::Net> net_decl_clauses net_decl 
 
 %type<verilog::Constant> constant
 %type<verilog::Assignment> assignment 
@@ -151,6 +151,7 @@ port_type
   | INOUT REG  { $$ = std::make_pair(verilog::PortDirection::INOUT, verilog::ConnectionType::REG);  }
   ;
 
+// e.g. "input a, b, output c, d" is allowed in port declarations
 port_decls
   : port_decl 
     {
@@ -198,8 +199,21 @@ clause
 
 
 declaration 
-  : port_decls ';' { driver->add_port(std::move($1)); } 
-  | net_decls  ';' { driver->add_net(std::move($1)); }
+  : port_decl_clauses ';' { driver->add_port(std::move($1)); } 
+  | net_decl_clauses  ';' { driver->add_net(std::move($1)); }
+  ;
+
+// e.g. "input a, b, output c, d" is not allowed in port declaration clauses 
+port_decl_clauses
+  : port_decl 
+    {
+      $$ = $1;
+    }
+  | port_decl_clauses ',' valid_name 
+    {
+      $1.names.emplace_back(std::move($3));    
+      $$ = $1;
+    }
   ;
 
 
@@ -214,17 +228,12 @@ net_type
   |  SUPPLY1 { $$ = verilog::NetType::SUPPLY1; }
   ;
 
-net_decls
+net_decl_clauses
   : net_decl 
     {
       $$ = $1;
     }
-  | net_decls ',' net_decl  
-    {
-      driver->add_net(std::move($1));
-      $$ = $3;
-    }
-  | net_decls ',' valid_name 
+  | net_decl_clauses ',' valid_name 
     {
       $1.names.push_back(std::move($3));
       $$ = $1;
