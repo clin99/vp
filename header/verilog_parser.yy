@@ -125,7 +125,7 @@ module
     clauses ENDMODULE
   | MODULE valid_name '(' 
     { 
-      driver->add_module($2); 
+      driver->add_module(std::move($2)); 
     } 
     port_decls ')' 
     { 
@@ -163,7 +163,7 @@ port_decls
     }
   | port_decls ',' valid_name 
     {
-      $1.names.emplace_back($3);     
+      $1.names.emplace_back(std::move($3));    
       $$ = $1;
     }
   ;
@@ -173,7 +173,7 @@ port_decl
     {
       $$.dir  = std::get<0>($1);
       $$.type = std::get<1>($1);
-      $$.names.emplace_back($2); 
+      $$.names.emplace_back(std::move($2)); 
     }
   | port_type '[' INTEGER ':' INTEGER ']' valid_name  
     {
@@ -181,7 +181,7 @@ port_decl
       $$.type = std::get<1>($1);
       $$.beg = std::stoi($3.value);
       $$.end = std::stoi($5.value);
-      $$.names.emplace_back($7); 
+      $$.names.push_back(std::move($7)); 
     }
   ;
 
@@ -226,7 +226,7 @@ net_decls
     }
   | net_decls ',' valid_name 
     {
-      $1.names.emplace_back($3);     
+      $1.names.push_back(std::move($3));
       $$ = $1;
     }
   ;
@@ -235,14 +235,14 @@ net_decl
   : net_type valid_name 
     {
       $$.type = $1;
-      $$.names.emplace_back($2); 
+      $$.names.push_back(std::move($2)); 
     }
   | net_type '[' INTEGER ':' INTEGER ']' valid_name  
     {
       $$.type = $1;
       $$.beg = std::stoi($3.value);
       $$.end = std::stoi($5.value);
-      $$.names.emplace_back($7); 
+      $$.names.push_back(std::move($7)); 
     }
   ;
 
@@ -262,7 +262,7 @@ assignment
 
 // Should try to merge lhs & rhs definition
 lhs
-  : valid_name { $$.emplace_back($1); }
+  : valid_name { $$.push_back(std::move($1)); }
   | valid_name '[' INTEGER ']' 
     { $$.emplace_back(verilog::NetBit(std::move($1), std::stoi($3.value))); }
   | valid_name '[' INTEGER ':' INTEGER ']' 
@@ -284,7 +284,7 @@ lhs_exprs
   ;
 
 lhs_expr 
-  : valid_name { $$.emplace_back($1); }
+  : valid_name { $$.push_back(std::move($1)); }
   | valid_name '[' INTEGER ']' 
     { $$.emplace_back(verilog::NetBit(std::move($1), std::stoi($3.value))); }
   | valid_name '[' INTEGER ':' INTEGER ']' 
@@ -311,7 +311,7 @@ rhs
     { $$.emplace_back(verilog::NetBit(std::move($1), std::stoi($3.value))); }
   | valid_name '[' INTEGER ':' INTEGER ']' 
     { $$.emplace_back(verilog::NetPart(std::move($1), std::stoi($3.value), std::stoi($5.value))); } 
-  | constant { $$.emplace_back(std::move($1)); }
+  | constant { $$.push_back(std::move($1)); }
   | rhs_concat { $$ = $1; }
   ;
  
@@ -329,12 +329,12 @@ rhs_exprs
   ;
 
 rhs_expr 
-  : valid_name { $$.emplace_back($1); }
+  : valid_name { $$.push_back(std::move($1)); }
   | valid_name '[' INTEGER ']' 
     { $$.emplace_back(verilog::NetBit(std::move($1), std::stoi($3.value))); }
   | valid_name '[' INTEGER ':' INTEGER ']' 
     { $$.emplace_back(verilog::NetPart(std::move($1), std::stoi($3.value), std::stoi($5.value))); } 
-  | constant { $$.emplace_back(std::move($1)); }
+  | constant { $$.push_back(std::move($1)); }
   | rhs_concat 
     { std::move($1.begin(), $1.end(), std::back_inserter($$)); }
   ;
@@ -346,16 +346,16 @@ rhs_expr
 instance 
   : valid_name valid_name '(' inst_pins ')' ';'
     { 
-      $$.module_name = $1; 
-      $$.inst_name = $2; 
+      std::swap($$.module_name, $1); 
+      std::swap($$.inst_name, $2); 
       std::swap($$.pin_names, std::get<0>($4));  
       std::swap($$.net_names, std::get<1>($4));  
       driver->add_instance(std::move($$));
     }
   | valid_name parameters valid_name '(' inst_pins ')' ';'
     { 
-      $$.module_name = $1; 
-      $$.inst_name = $3; 
+      std::swap($$.module_name, $1); 
+      std::swap($$.inst_name, $3); 
       std::swap($$.pin_names, std::get<0>($5));  
       std::swap($$.net_names, std::get<1>($5));  
       driver->add_instance(std::move($$));
@@ -377,7 +377,7 @@ nets_by_position
   | nets_by_position ',' rhs
     { 
       std::move($1.begin(), $1.end(), std::back_inserter($$));   
-      $$.emplace_back(std::move($3));
+      $$.push_back(std::move($3));
     }
   ;
   
@@ -385,8 +385,8 @@ nets_by_position
 nets_by_name 
   : net_by_name 
     { 
-      std::get<0>($$).emplace_back(std::move(std::get<0>($1))); 
-      std::get<1>($$).emplace_back(std::move(std::get<1>($1))); 
+      std::get<0>($$).push_back(std::move(std::get<0>($1))); 
+      std::get<1>($$).push_back(std::move(std::get<1>($1))); 
     }
   | nets_by_name ',' net_by_name 
     { 
@@ -395,8 +395,8 @@ nets_by_name
       std::move(pin_names.begin(), pin_names.end(), std::back_inserter(std::get<0>($$)));
       std::move(net_names.begin(), net_names.end(), std::back_inserter(std::get<1>($$)));
 
-      std::get<0>($$).emplace_back(std::move(std::get<0>($3))); 
-      std::get<1>($$).emplace_back(std::move(std::get<1>($3))); 
+      std::get<0>($$).push_back(std::move(std::get<0>($3))); 
+      std::get<1>($$).push_back(std::move(std::get<1>($3))); 
     }
   ;
 
@@ -407,7 +407,7 @@ net_by_name
   | '.' valid_name '(' valid_name ')' 
     { 
        std::get<0>($$) = $2; 
-       std::get<1>($$).emplace_back(std::move($4)); 
+       std::get<1>($$).push_back(std::move($4)); 
     } 
   | '.' valid_name '(' valid_name '[' INTEGER ']' ')' 
     { 
@@ -472,6 +472,7 @@ void verilog::VerilogParser::error(const location_type &l, const std::string &er
   std::cerr << "Parser error: " << err_message  << '\n'
             << "  begin at line " << l.begin.line <<  " col " << l.begin.column  << '\n' 
             << "  end   at line " << l.end.line <<  " col " << l.end.column << "\n";
+  std::abort();
 }
 
 
