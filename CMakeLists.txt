@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.9) 
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O2")
 
 project(verilog_parser CXX)
 
@@ -37,4 +37,19 @@ target_include_directories(verilog_parser
  PRIVATE
  .
  ${CMAKE_CURRENT_BINARY_DIR})
+
+
+
+# Regression  
+set(VP_UTEST_DIR ${PROJECT_SOURCE_DIR}/unittest) 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${VP_UTEST_DIR})
+
+add_executable(regression unittest/regression.cpp ${FLEX_verilog_lexer_OUTPUTS} ${BISON_verilog_parser_OUTPUTS})
+target_link_libraries(regression stdc++fs)
+add_test(regression ${VP_UTEST_DIR}/regression)
+
+
+
+
+
 
