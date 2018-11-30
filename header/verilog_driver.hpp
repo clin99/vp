@@ -19,7 +19,7 @@ class ParserVerilogInterface {
       if(_scanner) delete _scanner;
       if(_parser) delete _parser;
     }
-    virtual void add_module(const std::string&) = 0;
+    virtual void add_module(std::string&&) = 0;
     // port names, begin index, end index, port type (IOB), connection type (wire, reg)
     virtual void add_port(Port&&) = 0;
     virtual void add_net(Net&&) = 0;
@@ -54,31 +54,40 @@ inline void ParserVerilogInterface::read(const std::experimental::filesystem::pa
 struct SampleParser : public ParserVerilogInterface {
   virtual ~SampleParser(){}
 
-  void add_module(const std::string& name){
+  void add_module(std::string&& name){
     std::cout << "Module name = " << name << '\n';
   }
 
   void add_port(Port&& port) {
     if(show)
       std::cout << "\nAdd Port: \n" << port << '\n';
+    ports.push_back(std::move(port));
   }  
 
   void add_net(Net&& net) {
     if(show)
       std::cout << "\nAdd Net: \n" << net << '\n';
+    nets.push_back(std::move(net));
   }  
 
   void add_assignment(Assignment&& ast) {
     if(show)
       std::cout << "\nAdd assignment: \n" << ast << '\n';
+    assignments.push_back(std::move(ast));
   }  
 
   void add_instance(Instance&& inst) {
     if(show)
       std::cout << "\nAdd instance: \n" << inst << '\n';
+    insts.push_back(std::move(inst));
   }
   
   bool show {false};
+
+  std::vector<Port> ports;
+  std::vector<Net> nets;
+  std::vector<Assignment> assignments;
+  std::vector<Instance> insts;
 };
 
 
@@ -112,7 +121,7 @@ struct OpenTimerParser : public ParserVerilogInterface {
   OpenTimerParser() = default;
   virtual ~OpenTimerParser(){}
 
-  void add_module(const std::string& name){ module.name = name; }
+  void add_module(std::string&& name){ module.name = std::move(name); }
 
   void add_port(Port&& port) {
     if(port.dir == verilog::PortDirection::INPUT) {

@@ -52,9 +52,6 @@
 %left UMINUS
 
 %token              END    0     "end of file"
-%token<std::string> UPPER
-%token<std::string> LOWER
-%token<std::string> WORD
 %token              NEWLINE
 %token              UNDEFINED 
 
