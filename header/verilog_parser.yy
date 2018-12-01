@@ -107,17 +107,17 @@ modules
 module
   : MODULE valid_name ';' 
     { 
-      driver->add_module($2);
+      driver->add_module(std::move($2));
     }
     clauses ENDMODULE  
   | MODULE valid_name '(' ')' ';'
     {
-      driver->add_module($2);
+      driver->add_module(std::move($2));
     }
     clauses ENDMODULE
   | MODULE valid_name '(' port_names ')' ';' 
     {
-      driver->add_module($2);
+      driver->add_module(std::move($2));
     }
     clauses ENDMODULE
   | MODULE valid_name '(' 
